@@ -1,0 +1,64 @@
+---
+- name: Hello World 
+  hosts: appservers
+  become: true
+
+  tasks:
+    - name: update os
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Install packages
+      yum:
+        name:
+          - docker
+          - python2-pip
+        state: present
+
+    - name: install pip tools
+      become: true
+      pip: state=present name=docker-py
+    
+    - name: start docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: mount efs/nfs
+      shell: mount -t nfs 10.117.6.192:/ /mnt/efs/jira/
+      ignore_errors: yes
+
+
+    - name: create ext on ebs
+      shell: mkfs -t ext4 /dev/xvdb
+      ignore_errors: yes
+
+    - name: make-ebs-dir
+      shell: mkdir -p /data/jira-home
+      ignore_errors: yes
+
+    - name: mount ebs
+      shell: mount /dev/xvdb /data/jira-home
+      ignore_errors: yes
+
+    - name: sed ebs to fstab
+      lineinfile:
+        path: /etc/fstab
+        line: /dev/xvdb /root/data/jira-home ext4 (rw,relatime,data=ordered)
+        create: yes
+
+    - name: chmod jira-shared-home
+      shell: chown -R 2001:2001 /mnt/efs/jira/
+
+    - name: upload-pem
+      copy:
+        src: ~/Desktop/docker-demo.pem 
+        dest: /root/.ssh/id_rsa
+        owner: root
+        group: root
+        mode: '0600'
+      
+    - name: pre-pull images
+      shell: docker pull atlassian/jira-software:{{jiraversion}}
