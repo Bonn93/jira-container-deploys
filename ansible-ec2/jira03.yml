@@ -1,12 +1,22 @@
 ---
-- name: Hello World 
-  hosts: jira01
+- name: copy-home
+  hosts: jira01 
   become: true
 
   tasks:
+    - name: copy-home
+      shell: cp -r /data/jira-home /mnt/efs/jira/home-backup/
+
+- name: Deploy & Start Jira-03
+  hosts: jira03
+  become: true
+
+  tasks:
+    #- name: copy-home-from-efs
+    #  shell: cp -r /mnt/efs/jira/home-backup /data/jira-home/
     - name: run jira
       docker_container:
-        name: jira-01
+        name: jira-03
         image: atlassian/jira-software:{{jiraversion}} 
         state: started
         restart: yes
@@ -19,8 +29,8 @@
           - /mnt/efs/jira:/var/atlassian/shared
         env:
           EHCACHE_LISTENER_PORT: "40001"
-          EHCACHE_LISTENER_HOSTNAME: "10.117.6.161"
-          JIRA_NODE_ID: "jira-01"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.191"
+          JIRA_NODE_ID: "jira-02"
           JIRA_SHARED_HOME: "/var/atlassian/shared"
           CLUSTERED: "true"
           JVM_MINIMUM_MEMORY: "4096m"
