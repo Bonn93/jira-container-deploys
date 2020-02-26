@@ -1,0 +1,15 @@
+- name: ZDU pipeline complete
+  hosts: localhost
+
+  tasks:
+    - name: trigger ZDU API
+      uri:
+        url: http://internal-docker-demo-alb-100510385.ap-southeast-2.elb.amazonaws.com/rest/api/2/cluster/zdu/approve
+        method: POST
+        validate_certs: no
+        headers:
+          Content-Type: application/json
+        force_basic_auth: yes
+        user: admin
+        password: admin
+        status_code: 200

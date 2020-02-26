@@ -44,17 +44,19 @@
           - /mnt/efs/jira:/var/atlassian/shared
         env:
           EHCACHE_LISTENER_PORT: "40001"
-          EHCACHE_LISTENER_HOSTNAME: "10.117.6.146"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.161"
           JIRA_NODE_ID: "jira-01"
           JIRA_SHARED_HOME: "/var/atlassian/shared"
           CLUSTERED: "true"
-          JVM_MINIMUM_MEMORY: "2048m"
-          JVM_MAXIMUM_MEMORY: "2048m"
-          ATL_JDBC_URL: "jdbc:postgresql://jira-docker-demo.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
+          JVM_MINIMUM_MEMORY: "4096m"
+          JVM_MAXIMUM_MEMORY: "4096m"
+          ATL_JDBC_URL: "jdbc:postgresql://docker-demo-4.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
           ATL_JDBC_USER: "postgres"
-          ATL_JDBC_PASSWORD: "SuperSecure123"
+          ATL_JDBC_PASSWORD: "nqAzWXof3L4kjWG6x7SP"
           ATL_DB_DRIVER: "org.postgresql.Driver"
           ATL_DB_TYPE: "postgres72"
+          ATL_PROXY_NAME: "internal-docker-demo-alb-100510385.ap-southeast-2.elb.amazonaws.com"
+          ATL_PROXY_PORT: "80"
 
 - name: jira-01-healthplay
   hosts: localhost
@@ -62,7 +64,7 @@
   tasks:
     - name: trigger health test
       uri:
-        url: http://10.117.6.146:8080/rest/api/2/serverInfo
+        url: http://10.117.6.161:8080/rest/api/2/serverInfo
         method: GET
         validate_certs: no
         headers:
@@ -104,17 +106,19 @@
           - /mnt/efs/jira:/var/atlassian/shared
         env:
           EHCACHE_LISTENER_PORT: "40001"
-          EHCACHE_LISTENER_HOSTNAME: "10.117.6.229"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.232"
           JIRA_NODE_ID: "jira-02"
           JIRA_SHARED_HOME: "/var/atlassian/shared"
           CLUSTERED: "true"
-          JVM_MINIMUM_MEMORY: "2048m"
-          JVM_MAXIMUM_MEMORY: "2048m"
-          ATL_JDBC_URL: "jdbc:postgresql://jira-docker-demo.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
+          JVM_MINIMUM_MEMORY: "4096m"
+          JVM_MAXIMUM_MEMORY: "4096m"
+          ATL_JDBC_URL: "jdbc:postgresql://docker-demo-4.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
           ATL_JDBC_USER: "postgres"
-          ATL_JDBC_PASSWORD: "SuperSecure123"
+          ATL_JDBC_PASSWORD: "nqAzWXof3L4kjWG6x7SP"
           ATL_DB_DRIVER: "org.postgresql.Driver"
           ATL_DB_TYPE: "postgres72"
+          ATL_PROXY_NAME: "internal-docker-demo-alb-100510385.ap-southeast-2.elb.amazonaws.com"
+          ATL_PROXY_PORT: "80"
 
 - name: jira-02-healthplay
   hosts: localhost
@@ -122,7 +126,7 @@
   tasks:
     - name: trigger health test
       uri:
-        url: http://10.117.6.229:8080/rest/api/2/serverInfo
+        url: http://10.117.6.232:8080/rest/api/2/serverInfo
         method: GET
         validate_certs: no
         headers:
@@ -135,6 +139,69 @@
       until: _result.status == 200
       retries: 720 # 720 * 5 seconds = 1hour (60*60/5)
       delay: 5 # Every 5 seconds
+
+- name: upgrade jira03
+  hosts: jira03
+  become: true
+
+  tasks:
+    - name: stop existing container
+      docker_container:
+        name: jira-03
+        state: stopped
+    - name: remove jira-03
+      docker_container:
+        name: jira-03
+        state: absent
+    - name: run new jira image
+      docker_container:
+        name: jira-03
+        image: atlassian/jira-software:{{jiraversionnew}} 
+        state: started
+        restart: yes
+        network_mode: host
+        ports:
+          - "8080:8080"
+          - "40001:40001"
+        volumes: 
+          - /data/jira-home:/var/atlassian/application-data/jira
+          - /mnt/efs/jira:/var/atlassian/shared
+        env:
+          EHCACHE_LISTENER_PORT: "40001"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.191"
+          JIRA_NODE_ID: "jira-03"
+          JIRA_SHARED_HOME: "/var/atlassian/shared"
+          CLUSTERED: "true"
+          JVM_MINIMUM_MEMORY: "4096m"
+          JVM_MAXIMUM_MEMORY: "4096m"
+          ATL_JDBC_URL: "jdbc:postgresql://docker-demo-4.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
+          ATL_JDBC_USER: "postgres"
+          ATL_JDBC_PASSWORD: "nqAzWXof3L4kjWG6x7SP"
+          ATL_DB_DRIVER: "org.postgresql.Driver"
+          ATL_DB_TYPE: "postgres72"
+          ATL_PROXY_NAME: "internal-docker-demo-alb-100510385.ap-southeast-2.elb.amazonaws.com"
+          ATL_PROXY_PORT: "80"
+
+- name: jira-03-healthplay
+  hosts: localhost
+
+  tasks:
+    - name: trigger health test
+      uri:
+        url: http://10.117.6.191:8080/rest/api/2/serverInfo
+        method: GET
+        validate_certs: no
+        headers:
+          Content-Type: application/json
+        force_basic_auth: yes
+        user: admin
+        password: admin
+        status_code: 200
+      register: _result
+      until: _result.status == 200
+      retries: 720 # 720 * 5 seconds = 1hour (60*60/5)
+      delay: 5 # Every 5 seconds
+
 
 - name: ZDU pipeline complete
   hosts: localhost
@@ -150,4 +217,4 @@
         force_basic_auth: yes
         user: admin
         password: admin
-        status_code: 201
+        status_code: 200
