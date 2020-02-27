@@ -32,7 +32,7 @@
 
 
     - name: create ext on ebs
-      shell: mkfs -t ext4 /dev/xvdb
+      shell: mkfs -t ext4 /dev/nvme1n1
       ignore_errors: yes
 
     - name: make-ebs-dir
@@ -40,13 +40,13 @@
       ignore_errors: yes
 
     - name: mount ebs
-      shell: mount /dev/xvdb /data/jira-home
+      shell: mount /dev/nvme1n1 /data/jira-home
       ignore_errors: yes
 
     - name: sed ebs to fstab
       lineinfile:
         path: /etc/fstab
-        line: /dev/xvdb /root/data/jira-home ext4 (rw,relatime,data=ordered)
+        line: /dev/nvme1n1 /root/data/jira-home ext4 (rw,relatime,data=ordered)
         create: yes
 
     - name: chmod jira-shared-home

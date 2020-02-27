@@ -1,6 +1,6 @@
 ---
-- name: Deploy & Start Jira-02
-  hosts: jira02
+- name: Deploy & Start Jira-04
+  hosts: jira04
   become: true
 
   tasks:
@@ -8,7 +8,7 @@
     #  shell: cp -r /mnt/efs/jira/home-backup /data/jira-home/
     - name: run jira
       docker_container:
-        name: jira-02
+        name: jira-04
         image: atlassian/jira-software:{{jiraversion}} 
         state: started
         restart: yes
@@ -21,8 +21,8 @@
           - /mnt/efs/jira:/var/atlassian/shared
         env:
           EHCACHE_LISTENER_PORT: "40001"
-          EHCACHE_LISTENER_HOSTNAME: "10.117.6.163"
-          JIRA_NODE_ID: "jira-02"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.169"
+          JIRA_NODE_ID: "jira-04"
           JIRA_SHARED_HOME: "/var/atlassian/shared"
           CLUSTERED: "true"
           JVM_MINIMUM_MEMORY: "4096m"

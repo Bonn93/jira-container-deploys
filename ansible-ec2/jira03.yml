@@ -1,12 +1,4 @@
 ---
-- name: copy-home
-  hosts: jira03
-  become: true
-
-  tasks:
-    - name: copy-home
-      shell: cp -r /data/jira-home /mnt/efs/jira/home-backup/
-
 - name: Deploy & Start Jira-03
   hosts: jira03
   become: true
@@ -29,13 +21,13 @@
           - /mnt/efs/jira:/var/atlassian/shared
         env:
           EHCACHE_LISTENER_PORT: "40001"
-          EHCACHE_LISTENER_HOSTNAME: "10.117.6.191"
+          EHCACHE_LISTENER_HOSTNAME: "10.117.6.135"
           JIRA_NODE_ID: "jira-03"
           JIRA_SHARED_HOME: "/var/atlassian/shared"
           CLUSTERED: "true"
           JVM_MINIMUM_MEMORY: "4096m"
           JVM_MAXIMUM_MEMORY: "4096m"
-          ATL_JDBC_URL: "jdbc:postgresql://docker-demo-4.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jira"
+          ATL_JDBC_URL: "jdbc:postgresql://docker-demo-4.ct9ottbajolw.ap-southeast-2.rds.amazonaws.com:5432/jiradb"
           ATL_JDBC_USER: "postgres"
           ATL_JDBC_PASSWORD: "nqAzWXof3L4kjWG6x7SP"
           ATL_DB_DRIVER: "org.postgresql.Driver"
