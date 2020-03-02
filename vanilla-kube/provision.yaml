@@ -1,0 +1,97 @@
+---
+- name: Hello World 
+  hosts: kube-hosts
+  become: true
+
+  tasks:
+    - name: update os
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Add Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+      
+    - name: install docker
+      yum:
+        name: "docker-ce"
+        state: latest
+    
+    - name: start docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+    
+    - name: add kube repo
+      yum_repository:
+        name: Kubernetes
+        description: Kube Yum Repo
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
+        gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+    - name: add epel repo
+      yum:
+        name: "epel-release"
+        state: latest
+
+    - name: disable selinux 
+      selinux:
+        state: disabled
+      #reboot_required: true
+
+    - name: install kube stuff
+      yum:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: enable kubelet
+      systemd:
+        name: kubelet
+        enabled: yes
+        state: started
+    
+    - name: modify sysctl nftables
+      template:
+        src: nfiptables.conf
+        dest: /etc/sysctl.d/k8s.conf
+        owner: root
+        group: root
+    
+    - name: sysctl
+      shell: sysctl --system
+
+    - name: add iptables
+      yum:
+        name: iptables-services
+        state: present
+
+    - name: disable firewalld
+      systemd:
+        name: firewalld
+        enabled: no
+        state: stopped
+    
+    - name: enable iptables
+      systemd:
+        name: iptables
+        enabled: yes
+        state: started
+    
+    - name: allow all traffic
+      iptables:
+        chain: INPUT
+        #protocol: TCP
+        in_interface: ens192
+        jump: ACCEPT
+
+
+

@@ -1,0 +1,38 @@
+---
+- name: Bootstrap cluster
+  hosts: kube-master
+  become: true
+
+  tasks:
+    - name: init cluster
+      shell: |
+        kubeadm init --pod-network-cidr=10.244.0.0/16 \
+                     --token=fyaijv.0f00ma23o2jwqi6k \
+                     --apiserver-advertise-address=192.168.10.10
+      register: init_cluster
+
+    - name: mkdir
+      shell: mkdir -p $HOME/.kube
+    
+    - name: Copy admin.conf to Home directory
+      shell: cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+
+
+- name: Bootstrap workers
+  hosts: kube-workers
+  become: true
+
+  tasks:
+    - name: init workers
+      shell: |
+        kubeadm join 192.168.10.10:6443 --token fyaijv.0f00ma23o2jwqi6k \
+                                        --discovery-token-unsafe-skip-ca-verification
+      register: init_worker
+
+- name: Install Flannel
+  hosts: kube-master
+  become: true
+
+  tasks:
+    - name: install flannel
+      shell: kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
